@@ -106,7 +106,7 @@ class BaseAgent:
             messages.append(assistant_msg)
 
             tool_results = await asyncio.gather(*[
-                self._execute_tool(tc.function.name, json.loads(tc.function.arguments))
+                self._execute_tool(tc.function.name, self._parse_args(tc.function.arguments))
                 for tc in message.tool_calls
             ])
             for tc, result in zip(message.tool_calls, tool_results):
@@ -117,6 +117,14 @@ class BaseAgent:
             cost_usd=total_cost,
         )
         return {"answer": answer, "metadata": {"total_steps": step}}
+
+    def _parse_args(self, args_str: str) -> dict:
+        """Parse tool call arguments, returning empty dict on malformed JSON."""
+        try:
+            return json.loads(args_str)
+        except json.JSONDecodeError as e:
+            logger.warning("tool_args_parse_failed", raw=args_str, error=str(e))
+            return {}
 
     @observe("tool_call")
     async def _execute_tool(self, tool_name: str, arguments: dict) -> str:

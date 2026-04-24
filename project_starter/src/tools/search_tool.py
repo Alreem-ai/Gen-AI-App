@@ -30,7 +30,7 @@ def validate_url(url: str) -> bool:
             return False # Could not resolve
 
         # Simple check for private ranges (10.x.x.x, 192.168.x.x, 172.16.x.x, 127.x.x.x)
-        # In a real prod env, use the `ipaddress` module for strict checking
+        # In a real prod env, use the ipaddress module for strict checking
         parts = ip_address.split('.')
         if parts[0] == '10': return False
         if parts[0] == '192' and parts[1] == '168': return False
@@ -42,11 +42,8 @@ def validate_url(url: str) -> bool:
     except Exception:
         return False
 
-@registry.register(
-    "search_web",
-    "Search the web for a query. Returns a list of results with title, link, and snippet.",
-    category="research",
-)
+@registry.register("search_web", "Search the web for a query. Returns a list of results with title, link, and snippet.", category="research")
+# NOTE: The decorator above will work once you implement the registry!
 def search_web(query: str, max_results: int = 5) -> list[dict]:
     """
     Search the web using DuckDuckGo (HTML).
@@ -86,11 +83,8 @@ def search_web(query: str, max_results: int = 5) -> list[dict]:
 
     return results
 
-@registry.register(
-    "read_webpage",
-    "Read the content of a webpage. Returns the text content.",
-    category="research",
-)
+@registry.register("read_webpage", "Read the content of a webpage. Returns the text content.", category="research")
+# NOTE: The decorator above will work once you implement the registry!
 def read_webpage(url: str) -> str:
     """Read and extract text from a URL."""
     if not validate_url(url):
@@ -109,8 +103,7 @@ def read_webpage(url: str) -> str:
         # Remove script and style elements
         for script in soup(["script", "style"]):
             script.decompose()
-
-        text = soup.get_text(separator="\n")
+            text = soup.get_text(separator="\n")
         # Clean up whitespace
         lines = (line.strip() for line in text.splitlines())
         chunks = (phrase.strip() for line in lines for phrase in line.split("  "))

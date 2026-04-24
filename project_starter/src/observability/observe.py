@@ -51,6 +51,13 @@ class SimpleObserver:
         else:
             prefix, suffix = "|-- ", ""
 
+        # Build display name: prefer agent/tool info stored in metadata
+        display_name = span.name
+        if "agent" in span.metadata:
+            display_name = f"{span.metadata['agent']}"
+        if isinstance(span.input, dict) and "tool" in span.input:
+            display_name = f"{span.metadata.get('agent', '?')} → {span.input['tool']}"
+
         meta_parts = []
         if "tokens_in" in span.metadata:
             meta_parts.append(f"in={span.metadata['tokens_in']}")
@@ -60,7 +67,7 @@ class SimpleObserver:
             meta_parts.append(f"${span.metadata['cost_usd']:.4f}")
         meta_str = f" [{', '.join(meta_parts)}]" if meta_parts else ""
 
-        print(f"{indent}{prefix}{span.name}{suffix} ({duration:.2f}ms){meta_str}")
+        print(f"{indent}{prefix}{display_name}{suffix} ({duration:.2f}ms){meta_str}")
         for child in span.children:
             SimpleObserver.print_tree(child)
 

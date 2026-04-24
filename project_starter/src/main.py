@@ -25,7 +25,10 @@ def research(
     # 2. agent = OrchestratorAgent(model=resolved_model, max_steps=max_steps)
     # 3. result = asyncio.run(agent.run(query))
     # 4. print(result["answer"])
-    print("Not implemented yet. Complete the TODO above.")
+    resolved_model = model or settings.model_name
+    agent = OrchestratorAgent(model=resolved_model, max_steps=max_steps)
+    result = asyncio.run(agent.run(query))
+    print(result["answer"])
 
 
 if __name__ == "__main__":

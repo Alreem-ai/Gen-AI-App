@@ -42,12 +42,29 @@ class CostTracker:
         """
         Log a completion response's cost.
         """
-        # TODO: Implement this method
-        # 1. Check if _current_query exists
-        # 2. Extract usage stats from response
-        # 3. Calculate cost (use litellm.completion_cost or fallback)
-        # 4. create StepCost and add to query
-        pass
+        if not self._current_query:
+            return
+
+        usage = getattr(response, "usage", None)
+        input_tokens = getattr(usage, "prompt_tokens", 0) if usage else 0
+        output_tokens = getattr(usage, "completion_tokens", 0) if usage else 0
+        model = getattr(response, "model", "unknown")
+
+        try:
+            from litellm import completion_cost
+            cost = completion_cost(completion_response=response)
+        except Exception:
+            cost = 0.0
+
+        step = StepCost(
+            step_number=step_number,
+            model=model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_usd=cost,
+            is_tool_call=is_tool_call,
+        )
+        self._current_query.add_step(step)
 
     def end_query(self):
         if self._current_query:
@@ -55,6 +72,25 @@ class CostTracker:
             self._current_query = None
 
     def print_cost_breakdown(self):
-        # TODO: Print detailed cost breakdown
-        pass
+        if not self.queries:
+            print("No queries tracked yet.")
+            return
+
+        print("\n" + "=" * 60)
+        print("COST BREAKDOWN")
+        print("=" * 60)
+
+        for q in self.queries:
+            print(f"\nQuery: {q.query[:80]}")
+            print(f"  Total steps : {len(q.steps)}")
+            print(f"  Input tokens: {q.total_input_tokens}")
+            print(f"  Output tokens: {q.total_output_tokens}")
+            print(f"  Total cost  : ${q.total_cost_usd:.6f}")
+            for s in q.steps:
+                tag = "[tool]" if s.is_tool_call else "[llm] "
+                print(f"    Step {s.step_number} {tag} {s.model} | in={s.input_tokens} out={s.output_tokens} ${s.cost_usd:.6f}")
+
+        total = sum(q.total_cost_usd for q in self.queries)
+        print(f"\nAll-time total: ${total:.6f}")
+        print("=" * 60)
 
